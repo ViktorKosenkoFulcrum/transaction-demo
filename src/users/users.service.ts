@@ -25,6 +25,13 @@ export class UsersService {
     if (userOrder && userOrder.status === 'success') {
       throw new Error('duplication');
     }
+    await this.userOrderEntityRepository.upsert(
+      {
+        originalId: orderId,
+        status: 'success',
+      },
+      ['originalId'],
+    );
     return await this.usersRepository.increment(
       {
         id: userId,
@@ -54,6 +61,18 @@ export class UsersService {
         'balance',
         amount,
       );
+      // const user = await queryRunner.manager.findOneBy(UserEntity, {
+      //   id: userId,
+      // });
+      // await queryRunner.manager.update(
+      //   UserEntity,
+      //   {
+      //     id: userId,
+      //   },
+      //   {
+      //     balance: user.balance + amount,
+      //   },
+      // );
       await queryRunner.manager.upsert(
         UserOrderEntity,
         {
