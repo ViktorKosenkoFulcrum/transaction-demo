@@ -2,15 +2,15 @@ import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { UserTransactionEntity } from './entities/user-transaction.entity';
+import { UserOrderEntity } from './entities/user-order.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
-    @InjectRepository(UserTransactionEntity)
-    private userTransactionRepository: Repository<UserTransactionEntity>,
+    @InjectRepository(UserOrderEntity)
+    private userOrderEntityRepository: Repository<UserOrderEntity>,
     private dataSource: DataSource,
   ) {}
 
@@ -18,7 +18,13 @@ export class UsersService {
     return await this.usersRepository.save(user);
   }
 
-  async incBalance(userId: number, amount: number) {
+  async incBalance(orderId: string, userId: number, amount: number) {
+    const userOrder = await this.userOrderEntityRepository.findOneBy({
+      originalId: orderId,
+    });
+    if (userOrder && userOrder.status === 'success') {
+      throw new Error('duplication');
+    }
     return await this.usersRepository.increment(
       {
         id: userId,
@@ -28,21 +34,16 @@ export class UsersService {
     );
   }
 
-  async incBalanceTransaction(
-    transactionId: string,
-    userId: number,
-    amount: number,
-  ) {
+  async incBalanceTransaction(orderId: string, userId: number, amount: number) {
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
-    await queryRunner.startTransaction('REPEATABLE READ');
+    await queryRunner.startTransaction();
     try {
-      const userTransaction = await queryRunner.manager.findOneBy(
-        UserTransactionEntity,
-        { originalId: transactionId },
-      );
-      if (userTransaction && userTransaction.status === 'success') {
+      const userOrder = await queryRunner.manager.findOneBy(UserOrderEntity, {
+        originalId: orderId,
+      });
+      if (userOrder && userOrder.status === 'success') {
         throw new Error('duplication');
       }
       await queryRunner.manager.increment(
@@ -54,9 +55,9 @@ export class UsersService {
         amount,
       );
       await queryRunner.manager.upsert(
-        UserTransactionEntity,
+        UserOrderEntity,
         {
-          originalId: transactionId,
+          originalId: orderId,
           status: 'success',
         },
         ['originalId'],

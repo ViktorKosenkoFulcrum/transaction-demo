@@ -18,6 +18,6 @@ export class UsersController {
     if (isTransaction) {
       return await this.usersService.incBalanceTransaction(id, userId, amount);
     }
-    return await this.usersService.incBalance(userId, amount);
+    return await this.usersService.incBalance(id, userId, amount);
   }
 }
