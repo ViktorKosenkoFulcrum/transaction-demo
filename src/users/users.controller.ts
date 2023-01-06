@@ -20,4 +20,18 @@ export class UsersController {
     }
     return await this.usersService.incBalance(id, userId, amount);
   }
+
+  @Post('save-balance')
+  async saveBalance(
+    @Body() { userId, amount, isTransaction, id }: IncBalanceDto,
+  ) {
+    if (isTransaction) {
+      return await this.usersService.saveBalanceTransaction(
+        id,
+        userId,
+        amount.toString(),
+      );
+    }
+    return await this.usersService.saveBalance(id, userId, amount.toString());
+  }
 }
