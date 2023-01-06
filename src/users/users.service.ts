@@ -1,7 +1,11 @@
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import {
+  ConflictException,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { UserOrderEntity } from './entities/user-order.entity';
 import { UserBalanceEntity } from './entities/user-balance.entity';
 
@@ -127,6 +131,12 @@ export class UsersService {
     } catch (err) {
       // since we have errors lets rollback the changes we made
       await queryRunner.rollbackTransaction();
+      // if (
+      //   err instanceof QueryFailedError &&
+      //   err.message.includes('duplicate key value violates unique constraint')
+      // ) {
+      //   return { success: true };
+      // }
       throw err;
     } finally {
       // you need to release a queryRunner which was manually instantiated
