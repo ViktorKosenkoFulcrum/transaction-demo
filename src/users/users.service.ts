@@ -52,7 +52,7 @@ export class UsersService {
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
-    await queryRunner.startTransaction('REPEATABLE READ');
+    await queryRunner.startTransaction();
     try {
       const userOrder = await queryRunner.manager.findOneBy(UserOrderEntity, {
         originalId: orderId,
@@ -102,35 +102,14 @@ export class UsersService {
   }
 
   async saveBalance(orderId: string, userId: number, amount: string) {
-    await this.userBalanceEntityRepository.insert({
-      originalId: orderId,
-      status: 'success',
-      amount,
-      userId,
-    });
-  }
-
-  async saveBalanceTransaction(
-    orderId: string,
-    userId: number,
-    amount: string,
-  ) {
-    const queryRunner = this.dataSource.createQueryRunner();
-
-    await queryRunner.connect();
-    await queryRunner.startTransaction('REPEATABLE READ');
     try {
-      await queryRunner.manager.insert(UserBalanceEntity, {
+      return await this.userBalanceEntityRepository.save({
         originalId: orderId,
         status: 'success',
         amount,
         userId,
       });
-      await queryRunner.commitTransaction();
-      return { success: true };
     } catch (err) {
-      // since we have errors lets rollback the changes we made
-      await queryRunner.rollbackTransaction();
       // if (
       //   err instanceof QueryFailedError &&
       //   err.message.includes('duplicate key value violates unique constraint')
@@ -138,9 +117,6 @@ export class UsersService {
       //   return { success: true };
       // }
       throw err;
-    } finally {
-      // you need to release a queryRunner which was manually instantiated
-      await queryRunner.release();
     }
   }
 }

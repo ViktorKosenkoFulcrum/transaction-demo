@@ -18,6 +18,18 @@ export class QueryFailedErrorFilter extends BaseExceptionFilter {
     ) {
       super.catch(new ConflictException('duplicate'), host);
     }
+    if (
+      exception.message.includes(
+        'could not serialize access due to concurrent update',
+      )
+    ) {
+      super.catch(
+        new ConflictException(
+          'could not serialize access due to concurrent update',
+        ),
+        host,
+      );
+    }
     super.catch(new UnprocessableEntityException(), host);
   }
 }

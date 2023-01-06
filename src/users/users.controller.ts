@@ -12,6 +12,7 @@ export class UsersController {
     return await this.usersService.create({ balance: 0 });
   }
 
+  @UseFilters(QueryFailedErrorFilter)
   @Post('inc-balance')
   async incBalance(
     @Body() { userId, amount, isTransaction, id }: IncBalanceDto,
@@ -24,16 +25,7 @@ export class UsersController {
 
   @UseFilters(QueryFailedErrorFilter)
   @Post('save-balance')
-  async saveBalance(
-    @Body() { userId, amount, isTransaction, id }: IncBalanceDto,
-  ) {
-    if (isTransaction) {
-      return await this.usersService.saveBalanceTransaction(
-        id,
-        userId,
-        amount.toString(),
-      );
-    }
+  async saveBalance(@Body() { userId, amount, id }: IncBalanceDto) {
     return await this.usersService.saveBalance(id, userId, amount.toString());
   }
 }
